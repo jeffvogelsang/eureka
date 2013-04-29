@@ -29,5 +29,3 @@ def connect_loggly(username=None, password=None, domain=None, **kwargs):
     """Get a Loggly connection."""
 
     return LogglyConnection(username, password, domain, **kwargs)
-
-
