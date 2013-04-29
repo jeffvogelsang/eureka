@@ -17,16 +17,15 @@
 
 from distutils.core import setup
 
-import pyloggly
-
 setup(name='eureka',
-      version=pyloggly.__version__,
-      description='Eureka - a Python Loggly Library',
+      version='0.9',
+      description='A Python Loggly Library',
       long_description='Provides a Python interface to the Loggly API.',
       author='Jeff Vogelsang',
       author_email='jeffvogelsang@gmail.com',
-      install_requires=['requests'],
       packages=['eureka'],
+      install_requires = ['requests>=1.2.0'],
+      setup_requires = ['requests>=1.2.0'],
       url='http://github.com/jeffvogelsang/eureka',
       license='Apache v2.0',
       platforms='Posix; MacOS X; Windows',
