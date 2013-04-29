@@ -52,9 +52,12 @@ class TestLoggly(unittest.TestCase):
     def tearDown(self):
 
         # Restore environment settings.
-        os.environ['LOGGLY_USERNAME'] = self.env_username_save
-        os.environ['LOGGLY_PASSWORD'] = self.env__password
-        os.environ['LOGGLY_DOMAIN'] = self.env_domain
+        if self.env_username_save is not None:
+            os.environ['LOGGLY_USERNAME'] = self.env_username_save
+        if self.env__password is not None:
+            os.environ['LOGGLY_PASSWORD'] = self.env__password
+        if self.env_domain is not None:
+            os.environ['LOGGLY_DOMAIN'] = self.env_domain
 
     def testConnCredsFromEnv(self):
 
