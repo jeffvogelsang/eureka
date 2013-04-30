@@ -311,6 +311,8 @@ class LogglyConnection(object):
 
         return LogglyResponse(response)
 
+    #TODO Write tests for verifying retrievals utilizing submissions.
+
     def get_events(self, query_string, **kwargs):
         """Return events matching query_string."""
 
