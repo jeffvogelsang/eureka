@@ -3,11 +3,16 @@ eureka
 Python library for managing [Loggly](http://www.loggly.com) sources.
 
 Note: Forked from and based on loggly-python, by Mike Babineau/Electronic Arts.
-      The name is a play on Hoover, with Eureka being a competing brand.
+
+The library name is a play on Hoover, with Eureka being a competing brand.
 
 Currently, the library supports:
 
-* Loggly API: Manage Sources; See: http://loggly.com/support/advanced/extending-loggly/ for Loggly API information
+* Loggly API: Manage Sources
+* Loggly API: Event Submission
+* Loggly API: Event Retrieval
+
+See: http://loggly.com/support/advanced/extending-loggly/ for Loggly API information
 
 
 Requirements
