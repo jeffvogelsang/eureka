@@ -346,29 +346,65 @@ class LogglyConnection(object):
 
     # Faceted Queries
 
-    def _search_events_faceted(self):
+    def _search_events_faceted(self, facetby, query_string, from_date=None, until_date=None, buckets=None,
+                               gap=None, callback=None, output_format=None):
 
-    # curl -u [user]:[pass] "content-type:text/plain" 'https://[subdomain].loggly.com/api/facets/date/?q=404'
-    # curl -u [user]:[pass] "content-type:text/plain" 'https://[subdomain].loggly.com/api/facets/json.status/?q=inputname:myinput'
+        query_params = {
+            'q': query_string
+        }
 
-        pass
+        if from_date is not None:
+            query_params['from'] = from_date
+        if until_date is not None:
+            query_params['until'] = until_date
+        if buckets is not None:
+            query_params['buckets'] = buckets
+        if gap is not None:
+            query_params['gap'] = gap
+        if callback is not None:
+            query_params['callback'] = callback
+        if output_format is not None:
+            query_params['format'] = output_format
 
-    def faceted_search_on_date(self):
-    #     /facets/date/
+        path = "facets/%s/?" % facetby
 
-        pass
+        for param in query_params:
+            path = path + param + "=" + query_params[param] + "&"
+        path = path.rstrip("&")  # remove extra &
 
-    def faceted_search_on_ip(self):
-    #     /facets/ip/
+        response = requests.get("%s/%s" % (self.base_url, path), auth=self.auth)
 
-        pass
+        return LogglyResponse(response)
 
-    def faceted_search_on_input(self):
-    #     /facets/input/
+    def get_events_faceted(self, facetby, query_string, **kwargs):
+        """Return faceted events matching query_string."""
 
-        pass
+        response = self._search_events_faceted(facetby, query_string, **kwargs)
 
-    def faceted_search_on_json(self):
-    #     /facets/json.[field]/
+        return response.text
 
-        pass
+    def get_events_faceted_json(self, facetby, query_string, **kwargs):
+        """Return faceted events matching query_string as JSON."""
+
+        response = self._search_events_faceted(facetby, query_string, output_format="json", **kwargs)
+
+        return response.text
+
+    def get_events_faceted_dict(self, facetby, query_string, **kwargs):
+        """Return faceted events matching query_string as a Python dictionary."""
+
+        return json.loads(self.get_events_faceted_json(facetby, query_string, **kwargs))
+
+    def get_events_faceted_xml(self, facetby, query_string, output_format="xml", **kwargs):
+        """Return faceted events matching query_string as XML."""
+
+        response = self._search_events_faceted(facetby, query_string, **kwargs)
+
+        return response.text
+
+    def get_events_faceted_text(self, facetby, query_string, **kwargs):
+        """Return faceted events matching query_string as Text."""
+
+        response = self._search_events_faceted(facetby, query_string, output_format="text", **kwargs)
+
+        return response.text
