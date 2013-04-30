@@ -21,6 +21,7 @@ import requests
 from device import LogglyDevice
 from input import LogglyInput
 from response import LogglyResponse
+import json
 
 
 class LogglyConnection(object):
@@ -53,6 +54,8 @@ class LogglyConnection(object):
     def __repr__(self):
         return "Connection:%s@%s" % (self.username, self.base_url)
 
+    #### SOURCE MANAGEMENT API ####
+
     def _loggly_get(self, path):
         """Given a path, perform a get request using configured base_url and authentication."""
 
@@ -77,21 +80,6 @@ class LogglyConnection(object):
         """Given a path, perform a delete request using configured base_url and authentication."""
 
         response = requests.delete("%s/%s" % (self.base_url, path), auth=self.auth)
-
-        return LogglyResponse(response)
-
-    def _submit_data(self, input_key, data, data_type="text"):
-
-        # The content-type header differentiates between text and json. Text is the default.
-        if data_type == "json":
-            headers = {'content-type': 'application/x-www-form-urlencoded'}
-        else:
-            headers = {'content-type': 'text/plain'}
-
-        # Note that the URL for HTTP inputs is the same for all customers...
-        url = "https://logs.loggly.com/inputs/%s" % input_key
-
-        response = requests.post(url, data=data, headers=headers, auth=self.auth)
 
         return LogglyResponse(response)
 
@@ -244,6 +232,28 @@ class LogglyConnection(object):
 
         return "%s:%s" % (response.status_code, response.text)
 
+    #### SUBMISSION API ####
+
+    def _submit_data(self, input_key, data, data_type="text"):
+        """Submit data to input defined by input_key.
+
+        Note: While this is similar _loggly_post(), it goes to a different URL and has different
+              requirements for headers. Thus it has its own function.
+        """
+
+        # The content-type header differentiates between text and json. Text is the default.
+        if data_type == "json":
+            headers = {'content-type': 'application/x-www-form-urlencoded'}
+        else:
+            headers = {'content-type': 'text/plain'}
+
+        # Note that the URL for HTTP inputs is the same for all customers...
+        url = "https://logs.loggly.com/inputs/%s" % input_key
+
+        response = requests.post(url, data=data, headers=headers, auth=self.auth)
+
+        return LogglyResponse(response)
+
     def submit_text_data(self, text_data, input_key):
         """Submit plain text data to HTTP input identified by input_key."""
 
@@ -261,3 +271,104 @@ class LogglyConnection(object):
         response = self._submit_data(input_key, json_data, "json")
 
         return "%s:%s" % (response.status_code, response.text)
+
+    #### RETRIEVAL API ####
+
+    # Standard Queries
+
+    def _search_events(self, query_string, rows=None, start=None, from_date=None, until_date=None,
+                       order=None, callback=None, output_format=None, fields=None):
+        """Assemble Loggly API request for searching events data and returning results."""
+
+        query_params = {
+            'q': query_string
+        }
+
+        if rows is not None:
+            query_params['rows'] = rows
+        if start is not None:
+            query_params['start'] = start
+        if from_date is not None:
+            query_params['from'] = from_date
+        if until_date is not None:
+            query_params['until'] = until_date
+        if order is not None:
+            query_params['order'] = order
+        if callback is not None:
+            query_params['callback'] = callback
+        if output_format is not None:
+            query_params['format'] = output_format
+        if fields is not None:
+            query_params['fields'] = fields
+
+        path = "search?"
+
+        for param in query_params:
+            path = path + param + "=" + query_params[param] + "&"
+        path = path.rstrip("&")  # remove extra &
+
+        response = requests.get("%s/%s" % (self.base_url, path), auth=self.auth)
+
+        return LogglyResponse(response)
+
+    def get_events(self, query_string, **kwargs):
+        """Return events matching query_string."""
+
+        response = self._search_events(query_string, **kwargs)
+
+        return response.text
+
+    def get_events_json(self, query_string, **kwargs):
+        """Return events matching query_string as (raw) JSON."""
+
+        response = self._search_events(query_string, output_format="json", **kwargs)
+
+        return response.text
+
+    def get_events_dict(self, query_string, **kwargs):
+        """Return events matching query_string as a Python dictionary."""
+
+        return json.loads(self.get_events_json(query_string, **kwargs))
+
+    def get_events_xml(self, query_string, **kwargs):
+        """Return events matching query_string as XML."""
+
+        response = self._search_events(query_string, output_format="xml", **kwargs)
+
+        return response.text
+
+    def get_events_text(self, query_string, **kwargs):
+        """Return events matching query_string as Text."""
+
+        response = self._search_events(query_string, output_format="text", **kwargs)
+
+        return response.text
+
+    # Faceted Queries
+
+    def _search_events_faceted(self):
+
+    # curl -u [user]:[pass] "content-type:text/plain" 'https://[subdomain].loggly.com/api/facets/date/?q=404'
+    # curl -u [user]:[pass] "content-type:text/plain" 'https://[subdomain].loggly.com/api/facets/json.status/?q=inputname:myinput'
+
+        pass
+
+    def faceted_search_on_date(self):
+    #     /facets/date/
+
+        pass
+
+    def faceted_search_on_ip(self):
+    #     /facets/ip/
+
+        pass
+
+    def faceted_search_on_input(self):
+    #     /facets/input/
+
+        pass
+
+    def faceted_search_on_json(self):
+    #     /facets/json.[field]/
+
+        pass
