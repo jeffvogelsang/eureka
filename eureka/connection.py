@@ -80,6 +80,21 @@ class LogglyConnection(object):
 
         return LogglyResponse(response)
 
+    def _submit_data(self, input_key, data, data_type="text"):
+
+        # The content-type header differentiates between text and json. Text is the default.
+        if data_type == "json":
+            headers = {'content-type': 'application/x-www-form-urlencoded'}
+        else:
+            headers = {'content-type': 'text/plain'}
+
+        # Note that the URL for HTTP inputs is the same for all customers...
+        url = "https://logs.loggly.com/inputs/%s" % input_key
+
+        response = requests.post(url, data=data, headers=headers, auth=self.auth)
+
+        return LogglyResponse(response)
+
     def get_all_inputs(self, input_names=None):
         """Get all inputs, or the specific inputs matching the supplied list of input names."""
 
@@ -118,13 +133,15 @@ class LogglyConnection(object):
 
         return input_list
 
-    def create_input(self, name, service, description=None):
+    def create_input(self, name, service, input_format=None, description=None):
         """Create a new input given a name, service type, and optional description."""
 
         if not description: description = name
 
+        # Note: Format is only relevant for HTTP sources.
+        #       If format is omitted (none), Loggly defaults to text as the format.
         path = 'inputs/'
-        data = {'name': name, 'description': description, 'service': service}
+        data = {'name': name, 'service': service, 'format': input_format, 'description': description}
 
         response = self._loggly_post(path, data)
 
@@ -224,5 +241,23 @@ class LogglyConnection(object):
         path = 'devices/%s/' % loggly_device.id
 
         response = self._loggly_delete(path)
+
+        return "%s:%s" % (response.status_code, response.text)
+
+    def submit_text_data(self, text_data, input_key):
+        """Submit plain text data to HTTP input identified by input_key."""
+
+        #TODO Write test for verifying submission after we can get data out.
+
+        response = self._submit_data(input_key, text_data)
+
+        return "%s:%s" % (response.status_code, response.text)
+
+    def submit_json_data(self, json_data, input_key):
+        """Submit JSON formatted data to HTTP input identified by input_key."""
+
+        #TODO Write test for verifying submission after we can get data out.
+
+        response = self._submit_data(input_key, json_data, "json")
 
         return "%s:%s" % (response.status_code, response.text)
