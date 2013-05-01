@@ -311,6 +311,8 @@ class TestLogglyLive(unittest.TestCase):
         self.conn.delete_device(loggly_device_found)
         self.conn.delete_input(loggly_input)
 
+    # Next four tests have repetitive code. An opportunity for later cleanup.
+
     def testSubmitAndRetrieveTextEvents(self):
         """ Submit some text data, and then find it.
 
@@ -485,8 +487,8 @@ class TestLogglyLive(unittest.TestCase):
         json_event = json.dumps(event)
 
         # Test submitting a JSON event.
-        submit_attempts = 5
-        submit_attempt_delay = 5
+        submit_attempts = 10
+        submit_attempt_delay = 30
         event_submitted = False
         while not event_submitted and submit_attempts > 0:
             try:
