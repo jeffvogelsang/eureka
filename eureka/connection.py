@@ -26,33 +26,42 @@ import json
 
 class LogglyConnection(object):
 
-    def __init__(self, username=None, password=None, domain=None):
+    def __init__(self, username=None, password=None, domain=None, protocol="https"):
+
+        # Note: LogglyConnection assumes HTTPS.
+        self.protocol = protocol
 
         # Use environment variables for credentials if set.
         if None not in (os.environ.get('LOGGLY_DOMAIN'),
                         os.environ.get('LOGGLY_USERNAME'),
                         os.environ.get('LOGGLY_PASSWORD')):
-            self.base_url = 'http://%s/api' % os.environ.get('LOGGLY_DOMAIN')
+            self.domain = os.environ.get('LOGGLY_DOMAIN')
             self.username = os.environ.get('LOGGLY_USERNAME')
             self.password = os.environ.get('LOGGLY_PASSWORD')
+            # Protocol is optional. If we're using the system environment, pull it in.
+            if os.environ.get('LOGGLY_PROTOCOL') is not None:
+                self.protocol = os.environ.get('LOGGLY_PROTOCOL')
 
-        # Override if credentials passed to constructor.
+        # Use credentials passed to constructor over environment credentials.
         if None not in (username, password, domain):
             self.username = username
             self.password = password
-            self.base_url = 'http://%s/api' % domain
+            self.domain = domain
 
         # Raise error if we haven't managed to set the credentials at this point.
         if None in (getattr(self, 'username', None),
                     getattr(self, 'password', None),
-                    getattr(self, 'base_url', None)):
+                    getattr(self, 'domain', None)):
             raise AttributeError("No Loggly credentials provided or found in environment.")
+
+        # Now set the base_url used for operations.
+        self.base_url = '%s://%s/api' % (self.protocol, self.domain)
 
         # Authentication tuple for requests
         self.auth = (self.username, self.password)
 
     def __repr__(self):
-        return "Connection:%s@%s" % (self.username, self.base_url)
+        return "Connection: %s@%s" % (self.username, self.base_url)
 
     #### SOURCE MANAGEMENT API ####
 
