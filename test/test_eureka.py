@@ -107,30 +107,58 @@ class TestLoggly(unittest.TestCase):
 
         # Credentials supplied to constructor
         conn = connect_loggly('username', 'password', 'domain')
-        self.assertEqual("Connection:username@http://domain/api", "%s" % conn)
+        self.assertEqual("Connection:username@https://domain/api", "%s" % conn)
 
 
 @unittest.skipIf(not enable_live_tests, 'Live connection tests skipped.')
 class TestLogglyLive(unittest.TestCase):
+    """Live tests. Prove code works against live API.
+
+    Note: As these are live tests, running an integration-level, they are subject to environmental failures!
+          If you experience a failure, the tests may leave behind inputs and devices you'll want to clean up.
+    """
 
     def setUp(self):
         """Re-use a live connection to loggly for tests."""
 
         self.conn = connect_loggly()
 
-    def create_input(self):
-        """Create an input with a randomize name and description."""
+        print "Using: %s" % self.conn
+
+    # Helper methods
+
+    def create_input(self, input_type="syslogudp", input_format="text"):
+        """Create and with a randomized name and description for testing purposes."""
 
         input_name = "test-input-%s" % rand_string()
         input_desc = "test-description-%s" % rand_string()
-        loggly_input = self.conn.create_input(input_name, 'syslogudp', input_desc)
+
+        loggly_input = self.conn.create_input(input_name, input_type, input_format, input_desc)
+
         print "Created input: %s, %s" % (loggly_input.id, loggly_input.name)
         return loggly_input
+
+    def create_syslog_input(self):
+        """Create a syslog input with a randomized named and description for testing purposes."""
+
+        return self.create_input(input_type="syslogudp")
+
+    def create_http_text_input(self):
+        """Create a http text input with a randomized named and description for testing purposes."""
+
+        return self.create_input(input_type="http")
+
+    def create_http_json_input(self):
+        """Create a http json input with a randomized named and description for testing purposes."""
+
+        return self.create_input(input_type="http", input_format="json")
+
+    # Tests
 
     def testCreateDeleteInput(self):
         """Create an input then delete it."""
 
-        loggly_input = self.create_input()
+        loggly_input = self.create_syslog_input()
         self.conn.delete_input(loggly_input)
 
     def testCreateDeleteDevice(self):
@@ -139,7 +167,7 @@ class TestLogglyLive(unittest.TestCase):
         This requires adding the device to an input, so we create and delete one of these as well.
         """
 
-        loggly_input = self.create_input()
+        loggly_input = self.create_syslog_input()
 
         min_loggly_device = LogglyDevice({'ip': get_rand_private_ip()}) # de minimus Loggly device
         loggly_device = self.conn.add_device_to_input(min_loggly_device, loggly_input)  # create actual device
@@ -153,7 +181,7 @@ class TestLogglyLive(unittest.TestCase):
         This requires adding the device to an input, so we create and delete one of these as well.
         """
 
-        loggly_input = self.create_input()
+        loggly_input = self.create_syslog_input()
 
         loggly_device = self.conn.add_this_device_to_input(loggly_input)
 
@@ -165,8 +193,8 @@ class TestLogglyLive(unittest.TestCase):
 
         To make sure we're getting multiple inputs, create a few, get the list, then delete them.
         """
-        loggly_input1 = self.create_input()
-        loggly_input2 = self.create_input()
+        loggly_input1 = self.create_syslog_input()
+        loggly_input2 = self.create_syslog_input()
 
         inputs = self.conn.get_all_inputs()
         self.assertGreaterEqual(len(inputs), 2)
@@ -180,8 +208,8 @@ class TestLogglyLive(unittest.TestCase):
         We create a input so we can test finding a specific input, then delete it.
         """
 
-        loggly_input1 = self.create_input()
-        loggly_input2 = self.create_input()
+        loggly_input1 = self.create_syslog_input()
+        loggly_input2 = self.create_syslog_input()
 
         self.assertEqual(1, len(self.conn.get_all_inputs([loggly_input1.name])))
         self.assertEqual(loggly_input1.id, self.conn.get_all_inputs([loggly_input1.name])[0].id)
@@ -197,7 +225,7 @@ class TestLogglyLive(unittest.TestCase):
         We create a input so we can test finding a specific input, then delete it.
         """
 
-        loggly_input_to_find = self.create_input()
+        loggly_input_to_find = self.create_syslog_input()
         loggly_input_found = self.conn.get_input(loggly_input_to_find.id)
 
         self.assertEqual(loggly_input_found.id, loggly_input_to_find.id)
@@ -211,7 +239,7 @@ class TestLogglyLive(unittest.TestCase):
           then delete the input and the devices.
         """
 
-        loggly_input = self.create_input()
+        loggly_input = self.create_syslog_input()
 
         min_loggly_device1 = LogglyDevice({'ip': get_rand_private_ip()}) # de minimus Loggly device
         min_loggly_device2 = LogglyDevice({'ip': get_rand_private_ip()})
@@ -233,7 +261,7 @@ class TestLogglyLive(unittest.TestCase):
         We create an input and a device so we can test finding a specific device, then delete them.
         """
 
-        loggly_input = self.create_input()
+        loggly_input = self.create_syslog_input()
 
         min_loggly_device1 = LogglyDevice({'ip': get_rand_private_ip()}) # de minimus Loggly device
         min_loggly_device2 = LogglyDevice({'ip': get_rand_private_ip()})
@@ -256,7 +284,7 @@ class TestLogglyLive(unittest.TestCase):
         We create a device so we can test finding a specific device, then delete it.
         """
 
-        loggly_input = self.create_input()
+        loggly_input = self.create_syslog_input()
 
         min_loggly_device = LogglyDevice({'ip': get_rand_private_ip()}) # de minimus Loggly device
         loggly_device_to_find = self.conn.add_device_to_input(min_loggly_device, loggly_input) # create actual devices
