@@ -267,6 +267,222 @@ class TestLogglyLive(unittest.TestCase):
         self.conn.delete_device(loggly_device_found)
         self.conn.delete_input(loggly_input)
 
+    def testSubmitAndRetrieveTextEvents(self):
+        """ Submit some text data, and then find it.
+
+        We create an HTTP text input, submit some unique data, and then find it.
+        """
+
+        # Create an input. Need an HTTP input.
+        loggly_input = self.create_http_text_input()
+
+        # Make a random string that we're certain won't be found.
+        string_event = rand_string(150)
+
+        # Test submitting a Text event.
+        submit_attempts = 5
+        submit_attempt_delay = 5
+        event_submitted = False
+        while not event_submitted and submit_attempts > 0:
+            try:
+                self.conn.submit_text_data(string_event, loggly_input.input_token)
+                print "Event submitted."
+                event_submitted = True
+            except Exception as e:
+                submit_attempts -= 1
+                print "Error submitting event: %s" % e.message
+                print "%s tries left. Will try again in %s seconds." % (submit_attempts, submit_attempt_delay)
+                time.sleep(submit_attempt_delay)
+
+        self.assertTrue(event_submitted, "Event not submitted.")
+
+        # Test retrieving a Text event.
+        search_attempts = 10
+        search_attempt_delay = 30
+        event_found = False
+        while not event_found and search_attempts > 0:
+            try:
+                events = self.conn.get_events_dict(string_event)
+                num_found = events['numFound']
+                if num_found > 0:
+                    print "Event found."
+                    event_found = True
+                else:
+                    search_attempts -= 1
+                    print "Event not found. %s tries left. Will try again in %s seconds."\
+                          % (search_attempts, search_attempt_delay)
+                    time.sleep(search_attempt_delay)
+            except Exception as e:
+                search_attempts -= 1
+                print "Error searching for event: %s" % e.message
+                print "%s tries left. Will try again in %s seconds." % (search_attempts, search_attempt_delay)
+
+        self.assertTrue(event_found, "Event not found.")
+
+        # Remove the input
+        self.conn.delete_input(loggly_input)
+
+    def testSubmitAndRetrieveJsonEvents(self):
+
+        # Create an input. Need an HTTP input.
+        loggly_input = self.create_http_json_input()
+
+        # Make a random string that we're certain won't be found.
+        event_string = rand_string(150)
+        event = {
+            'event_string': event_string
+        }
+        json_event = json.dumps(event)
+
+        # Test submitting a JSON event.
+        submit_attempts = 5
+        submit_attempt_delay = 5
+        event_submitted = False
+        while not event_submitted and submit_attempts > 0:
+            try:
+                self.conn.submit_text_data(json_event, loggly_input.input_token)
+                print "Event submitted."
+                event_submitted = True
+            except Exception as e:
+                submit_attempts -= 1
+                print "Error submitting event: %s" % e.message
+                print "%s tries left. Will try again in %s seconds." % (submit_attempts, submit_attempt_delay)
+                time.sleep(submit_attempt_delay)
+
+        self.assertTrue(event_submitted, "Event not submitted.")
+
+        # Test retrieving a JSON event.
+        search_attempts = 10
+        search_attempt_delay = 30
+        event_found = False
+        while not event_found and search_attempts > 0:
+            try:
+                events = self.conn.get_events_dict('json.event_string:"%s"' % event_string)
+                num_found = events['numFound']
+                if num_found > 0:
+                    print "Event found."
+                    event_found = True
+                else:
+                    search_attempts -= 1
+                    print "Event not found. %s tries left. Will try again in %s seconds." \
+                          % (search_attempts, search_attempt_delay)
+                    time.sleep(search_attempt_delay)
+            except Exception as e:
+                search_attempts -= 1
+                print "Error searching for event: %s" % e.message
+                print "%s tries left. Will try again in %s seconds." % (search_attempts, search_attempt_delay)
+
+        self.assertTrue(event_found, "Event not found.")
+
+        # Remove the input
+        self.conn.delete_input(loggly_input)
+
+    def testSubmitAndRetrieveTextEventsFaceted(self):
+
+        # Create an input. Need an HTTP input.
+        loggly_input = self.create_http_json_input()
+
+        # Make a random string that we're certain won't be found.
+        string_event = rand_string(150)
+
+        # Test submitting a Text event.
+        submit_attempts = 5
+        submit_attempt_delay = 5
+        event_submitted = False
+        while not event_submitted and submit_attempts > 0:
+            try:
+                self.conn.submit_text_data(string_event, loggly_input.input_token)
+                print "Event submitted."
+                event_submitted = True
+            except Exception as e:
+                submit_attempts -= 1
+                print "Error submitting event: %s" % e.message
+                print "%s tries left. Will try again in %s seconds." % (submit_attempts, submit_attempt_delay)
+                time.sleep(submit_attempt_delay)
+
+        self.assertTrue(event_submitted, "Event not submitted.")
+
+        # Test retrieving a Text event.
+        search_attempts = 10
+        search_attempt_delay = 30
+        event_found = False
+        while not event_found and search_attempts > 0:
+            try:
+                events = self.conn.get_events_faceted_dict("date", string_event)
+                num_found = events['numFound']
+                if num_found > 0:
+                    print "Event found."
+                    event_found = True
+                else:
+                    search_attempts -= 1
+                    print "Event not found. %s tries left. Will try again in %s seconds." \
+                          % (search_attempts, search_attempt_delay)
+                    time.sleep(search_attempt_delay)
+            except Exception as e:
+                search_attempts -= 1
+                print "Error searching for event: %s" % e.message
+                print "%s tries left. Will try again in %s seconds." % (search_attempts, search_attempt_delay)
+
+        self.assertTrue(event_found, "Event not found.")
+
+        # Remove the input
+        self.conn.delete_input(loggly_input)
+
+    def testSubmitAndRetrieveJsonEventsFaceted(self):
+
+        # Create an input. Need an HTTP input.
+        loggly_input = self.create_http_json_input()
+
+        # Make a random string that we're certain won't be found.
+        event_string = rand_string(150)
+        event = {
+            'event_string': event_string
+        }
+        json_event = json.dumps(event)
+
+        # Test submitting a JSON event.
+        submit_attempts = 5
+        submit_attempt_delay = 5
+        event_submitted = False
+        while not event_submitted and submit_attempts > 0:
+            try:
+                self.conn.submit_text_data(json_event, loggly_input.input_token)
+                print "Event submitted."
+                event_submitted = True
+            except Exception as e:
+                submit_attempts -= 1
+                print "Error submitting event: %s" % e.message
+                print "%s tries left. Will try again in %s seconds." % (submit_attempts, submit_attempt_delay)
+                time.sleep(submit_attempt_delay)
+
+        self.assertTrue(event_submitted, "Event not submitted.")
+
+        # Test retrieving a JSON event.
+        search_attempts = 10
+        search_attempt_delay = 30
+        event_found = False
+        while not event_found and search_attempts > 0:
+            try:
+                events = self.conn.get_events_faceted_dict("date", 'json.event_string:"%s"' % event_string)
+                num_found = events['numFound']
+                if num_found > 0:
+                    print "Event found."
+                    event_found = True
+                else:
+                    search_attempts -= 1
+                    print "Event not found. %s tries left. Will try again in %s seconds." \
+                          % (search_attempts, search_attempt_delay)
+                    time.sleep(search_attempt_delay)
+            except Exception as e:
+                search_attempts -= 1
+                print "Error searching for event: %s" % e.message
+                print "%s tries left. Will try again in %s seconds." % (search_attempts, search_attempt_delay)
+
+        self.assertTrue(event_found, "Event not found.")
+
+        # Remove the input
+        self.conn.delete_input(loggly_input)
+
     def testLogglyExceptions(self):
 
         # A device with an 12-character string id should cause a 400 status code and raise and exception.
