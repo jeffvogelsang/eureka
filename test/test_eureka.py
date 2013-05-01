@@ -22,7 +22,6 @@ import unittest
 import time
 from eureka import connect_loggly
 from connection import LogglyDevice
-from pprint import pprint
 
 # Ensure that live test only run if LOGGLY_TEST_LIVE variable is present in the environment and set to 'True'
 # Note: Live tests are designed to reasonably safely create and destroy Loggly inventory without affecting
@@ -325,8 +324,8 @@ class TestLogglyLive(unittest.TestCase):
         string_event = rand_string(150)
 
         # Test submitting a Text event.
-        submit_attempts = 5
-        submit_attempt_delay = 5
+        submit_attempts = 10
+        submit_attempt_delay = 30
         event_submitted = False
         while not event_submitted and submit_attempts > 0:
             try:
@@ -380,8 +379,8 @@ class TestLogglyLive(unittest.TestCase):
         json_event = json.dumps(event)
 
         # Test submitting a JSON event.
-        submit_attempts = 5
-        submit_attempt_delay = 5
+        submit_attempts = 10
+        submit_attempt_delay = 30
         event_submitted = False
         while not event_submitted and submit_attempts > 0:
             try:
@@ -431,8 +430,8 @@ class TestLogglyLive(unittest.TestCase):
         string_event = rand_string(150)
 
         # Test submitting a Text event.
-        submit_attempts = 5
-        submit_attempt_delay = 5
+        submit_attempts = 10
+        submit_attempt_delay = 30
         event_submitted = False
         while not event_submitted and submit_attempts > 0:
             try:
