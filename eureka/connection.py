@@ -61,7 +61,7 @@ class LogglyConnection(object):
         self.auth = (self.username, self.password)
 
     def __repr__(self):
-        return "Connection: %s@%s" % (self.username, self.base_url)
+        return "Connection:%s@%s" % (self.username, self.base_url)
 
     #### SOURCE MANAGEMENT API ####
 
