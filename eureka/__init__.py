@@ -25,7 +25,9 @@ __copyright__ = "Jeff Vogelsang"
 __license__ = "Apache v2.0"
 
 
-def connect_loggly(username=None, password=None, domain=None, **kwargs):
+def connect_loggly(username=None, password=None, domain=None, protocol="https"):
     """Get a Loggly connection."""
 
-    return LogglyConnection(username, password, domain, **kwargs)
+    # Note: connect_loggly assumes HTTPS.
+
+    return LogglyConnection(username, password, domain, protocol)
