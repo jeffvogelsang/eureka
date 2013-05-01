@@ -266,16 +266,12 @@ class LogglyConnection(object):
     def submit_text_data(self, text_data, input_key):
         """Submit plain text data to HTTP input identified by input_key."""
 
-        #TODO Write test for verifying submission after we can get data out.
-
         response = self._submit_data(input_key, text_data)
 
         return "%s:%s" % (response.status_code, response.text)
 
     def submit_json_data(self, json_data, input_key):
         """Submit JSON formatted data to HTTP input identified by input_key."""
-
-        #TODO Write test for verifying submission after we can get data out.
 
         response = self._submit_data(input_key, json_data, "json")
 
@@ -319,8 +315,6 @@ class LogglyConnection(object):
         response = requests.get("%s/%s" % (self.base_url, path), auth=self.auth)
 
         return LogglyResponse(response)
-
-    #TODO Write tests for verifying retrievals utilizing submissions.
 
     def get_events(self, query_string, **kwargs):
         """Return events matching query_string."""
