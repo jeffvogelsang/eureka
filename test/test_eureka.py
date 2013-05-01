@@ -50,18 +50,24 @@ class TestLoggly(unittest.TestCase):
 
         # Preserve environment settings, put them back when done.
         self.env_username_save = os.environ.get('LOGGLY_USERNAME')
-        self.env__password = os.environ.get('LOGGLY_PASSWORD')
-        self.env_domain = os.environ.get('LOGGLY_DOMAIN')
+        self.env_password_save = os.environ.get('LOGGLY_PASSWORD')
+        self.env_domain_save = os.environ.get('LOGGLY_DOMAIN')
+        self.env_protocol_save = os.environ.get('LOGGLY_PROTOCOL')
 
     def tearDown(self):
 
-        # Restore environment settings.
-        if self.env_username_save is not None:
-            os.environ['LOGGLY_USERNAME'] = self.env_username_save
-        if self.env__password is not None:
-            os.environ['LOGGLY_PASSWORD'] = self.env__password
-        if self.env_domain is not None:
-            os.environ['LOGGLY_DOMAIN'] = self.env_domain
+        def restore_environment(env_var, env_var_saved):
+
+            if env_var_saved is not None:
+                os.environ[env_var] = env_var_saved
+            else:
+                if os.environ.get(env_var) is not None:
+                    del os.environ[env_var]
+
+        restore_environment('LOGGLY_USERNAME', self.env_username_save)
+        restore_environment('LOGGLY_PASSWORD', self.env_password_save)
+        restore_environment('LOGGLY_DOMAIN', self.env_domain_save)
+        restore_environment('LOGGLY_PROTOCOL', self.env_protocol_save)
 
     def testConnCredsFromEnv(self):
 
@@ -73,6 +79,13 @@ class TestLoggly(unittest.TestCase):
 
         self.assertEquals('env_username', getattr(conn, 'username'))
         self.assertEquals('env_password', getattr(conn, 'password'))
+        self.assertEquals('https://env_domain/api', getattr(conn, 'base_url'))
+
+        # Make sure we can override the HTTP default.
+        os.environ['LOGGLY_PROTOCOL'] = 'http'
+
+        conn = connect_loggly()
+        self.assertEquals('http', getattr(conn, 'protocol'))
         self.assertEquals('http://env_domain/api', getattr(conn, 'base_url'))
 
     def testConnCredsSupplied(self):
@@ -81,6 +94,10 @@ class TestLoggly(unittest.TestCase):
 
         self.assertEquals('username', getattr(conn, 'username'))
         self.assertEquals('password', getattr(conn, 'password'))
+        self.assertEquals('https://domain/api', getattr(conn, 'base_url'))
+
+        conn = connect_loggly('username', 'password', 'domain', 'http')
+        self.assertEquals('http', getattr(conn, 'protocol'))
         self.assertEquals('http://domain/api', getattr(conn, 'base_url'))
 
     def testConnCredsMissing(self):
@@ -99,7 +116,7 @@ class TestLoggly(unittest.TestCase):
 
         # Credentials from enviornment
         conn = connect_loggly()
-        self.assertEqual("Connection:env_username@http://env_domain/api", "%s" % conn)
+        self.assertEqual("Connection:env_username@https://env_domain/api", "%s" % conn)
 
         del os.environ['LOGGLY_USERNAME']
         del os.environ['LOGGLY_PASSWORD']
