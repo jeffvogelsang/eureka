@@ -16,13 +16,17 @@
 import os
 import random
 from random import randrange
+import json
 import string
 import unittest
+import time
 from eureka import connect_loggly
 from connection import LogglyDevice
+from pprint import pprint
 
-# Ensure that live test only run LOGGLY_TEST_LIVE is present in the environment and set to 'True'
-# Note: Live tests are designed to safely create and destroy Loggly inventory without affecting existing configuration.
+# Ensure that live test only run if LOGGLY_TEST_LIVE variable is present in the environment and set to 'True'
+# Note: Live tests are designed to reasonably safely create and destroy Loggly inventory without affecting
+#       existing configuration through use of randomized strings and loop-back IP addresses.
 enable_live_tests = os.environ.get('LOGGLY_TEST_LIVE')
 if enable_live_tests is not None and enable_live_tests == 'True':
     enable_live_tests = True
