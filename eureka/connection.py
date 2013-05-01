@@ -247,7 +247,7 @@ class LogglyConnection(object):
         """Submit data to input defined by input_key.
 
         Note: While this is similar _loggly_post(), it goes to a different URL and has different
-              requirements for headers. Thus it has its own function.
+              requirements for headers. Thus it has its own method.
         """
 
         # The content-type header differentiates between text and json. Text is the default.
