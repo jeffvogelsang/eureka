@@ -101,9 +101,12 @@ class TestLoggly(unittest.TestCase):
 
     def testConnCredsMissing(self):
 
-        del os.environ['LOGGLY_USERNAME']
-        del os.environ['LOGGLY_PASSWORD']
-        del os.environ['LOGGLY_DOMAIN']
+        if os.environ.get('LOGGLY_USERNAME') is not None:
+            del os.environ['LOGGLY_USERNAME']
+        if os.environ.get('LOGGLY_PASSWORD') is not None:
+            del os.environ['LOGGLY_PASSWORD']
+        if os.environ.get('LOGGLY_DOMAIN') is not None:
+            del os.environ['LOGGLY_DOMAIN']
 
         self.assertRaises(AttributeError, connect_loggly)
 
@@ -143,7 +146,7 @@ class TestLogglyLive(unittest.TestCase):
 
     # Helper methods
 
-    def create_input(self, input_type="syslogudp", input_format="text"):
+    def _create_input(self, input_type="syslogudp", input_format="text"):
         """Create and with a randomized name and description for testing purposes."""
 
         input_name = "test-input-%s" % rand_string()
@@ -154,27 +157,103 @@ class TestLogglyLive(unittest.TestCase):
         print "Created input: %s, %s" % (loggly_input.id, loggly_input.name)
         return loggly_input
 
-    def create_syslog_input(self):
+    def _create_syslog_input(self):
         """Create a syslog input with a randomized named and description for testing purposes."""
 
-        return self.create_input(input_type="syslogudp")
+        return self._create_input(input_type="syslogudp")
 
-    def create_http_text_input(self):
+    def _create_http_text_input(self):
         """Create a http text input with a randomized named and description for testing purposes."""
 
-        return self.create_input(input_type="http")
+        return self._create_input(input_type="http")
 
-    def create_http_json_input(self):
+    def _create_http_json_input(self):
         """Create a http json input with a randomized named and description for testing purposes."""
 
-        return self.create_input(input_type="http", input_format="json")
+        return self._create_input(input_type="http", input_format="json")
+
+    def _get_events(self, test_faceted=False, test_json=False):
+        """Local method for testing retrieval methods: Facedted vs. not, JSON vs. not."""
+
+        submit_attempts = 10  # number of times to attempt submitting an event.
+        submit_attempt_delay = 30  # delay between attempts in seconds
+
+        search_attempts = 10  # number of times to attempt searching for an event.
+        search_attempt_delay = 30  # delay between attempts in seconds
+
+        # Create an input. Need an HTTP input.
+        if test_json:
+            loggly_input = self._create_http_json_input()
+        else:
+            loggly_input = self._create_http_text_input()
+
+        # Make a random string that we're certain won't be found.
+        event_string = rand_string(150)
+        if test_json:
+            event = json.dumps({
+                'event_string': event_string
+            })
+        else:
+            event = event_string
+
+        # Test submitting a event.
+        event_submitted = False
+        while not event_submitted and submit_attempts > 0:
+            try:
+                self.conn.submit_text_data(event, loggly_input.input_token)
+                print "Event submitted."
+                event_submitted = True
+            except Exception as e:
+                submit_attempts -= 1
+                print "Error submitting event: %s" % e.message
+                print "%s tries left. Will try again in %s seconds." % (submit_attempts, submit_attempt_delay)
+                time.sleep(submit_attempt_delay)
+
+        self.assertTrue(event_submitted, "Event not submitted.")
+
+        # Test retrieving event.
+        event_found = False
+        while not event_found and search_attempts > 0:
+            try:
+                if test_faceted:
+                    if test_json:
+                        print "Testing faceted JSON search."
+                        events = self.conn.get_events_faceted_dict('date', 'json.event_string:"%s"' % event_string)
+                    else:
+                        print "Testing faceted Text search."
+                        events = self.conn.get_events_faceted_dict('date', event_string)
+                else:
+                    if test_json:
+                        print "Testing JSON search."
+                        events = self.conn.get_events_dict('json.event_string:"%s"' % event_string)
+                    else:
+                        print "Testing Text search."
+                        events = self.conn.get_events_dict(event_string)
+                num_found = events['numFound']
+                if num_found > 0:
+                    print "Event found."
+                    event_found = True
+                else:
+                    search_attempts -= 1
+                    print "Event not found. %s tries left. Will try again in %s seconds." \
+                          % (search_attempts, search_attempt_delay)
+                    time.sleep(search_attempt_delay)
+            except Exception as e:
+                search_attempts -= 1
+                print "Error searching for event: %s" % e.message
+                print "%s tries left. Will try again in %s seconds." % (search_attempts, search_attempt_delay)
+
+        self.assertTrue(event_found, "Event not found.")
+
+        # Remove the input
+        self.conn.delete_input(loggly_input)
 
     # Tests
 
     def testCreateDeleteInput(self):
         """Create an input then delete it."""
 
-        loggly_input = self.create_syslog_input()
+        loggly_input = self._create_syslog_input()
         self.conn.delete_input(loggly_input)
 
     def testCreateDeleteDevice(self):
@@ -183,7 +262,7 @@ class TestLogglyLive(unittest.TestCase):
         This requires adding the device to an input, so we create and delete one of these as well.
         """
 
-        loggly_input = self.create_syslog_input()
+        loggly_input = self._create_syslog_input()
 
         min_loggly_device = LogglyDevice({'ip': get_rand_private_ip()}) # de minimus Loggly device
         loggly_device = self.conn.add_device_to_input(min_loggly_device, loggly_input)  # create actual device
@@ -197,7 +276,7 @@ class TestLogglyLive(unittest.TestCase):
         This requires adding the device to an input, so we create and delete one of these as well.
         """
 
-        loggly_input = self.create_syslog_input()
+        loggly_input = self._create_syslog_input()
 
         loggly_device = self.conn.add_this_device_to_input(loggly_input)
 
@@ -209,8 +288,8 @@ class TestLogglyLive(unittest.TestCase):
 
         To make sure we're getting multiple inputs, create a few, get the list, then delete them.
         """
-        loggly_input1 = self.create_syslog_input()
-        loggly_input2 = self.create_syslog_input()
+        loggly_input1 = self._create_syslog_input()
+        loggly_input2 = self._create_syslog_input()
 
         inputs = self.conn.get_all_inputs()
         self.assertGreaterEqual(len(inputs), 2)
@@ -224,8 +303,8 @@ class TestLogglyLive(unittest.TestCase):
         We create a input so we can test finding a specific input, then delete it.
         """
 
-        loggly_input1 = self.create_syslog_input()
-        loggly_input2 = self.create_syslog_input()
+        loggly_input1 = self._create_syslog_input()
+        loggly_input2 = self._create_syslog_input()
 
         self.assertEqual(1, len(self.conn.get_all_inputs([loggly_input1.name])))
         self.assertEqual(loggly_input1.id, self.conn.get_all_inputs([loggly_input1.name])[0].id)
@@ -241,7 +320,7 @@ class TestLogglyLive(unittest.TestCase):
         We create a input so we can test finding a specific input, then delete it.
         """
 
-        loggly_input_to_find = self.create_syslog_input()
+        loggly_input_to_find = self._create_syslog_input()
         loggly_input_found = self.conn.get_input(loggly_input_to_find.id)
 
         self.assertEqual(loggly_input_found.id, loggly_input_to_find.id)
@@ -255,7 +334,7 @@ class TestLogglyLive(unittest.TestCase):
           then delete the input and the devices.
         """
 
-        loggly_input = self.create_syslog_input()
+        loggly_input = self._create_syslog_input()
 
         min_loggly_device1 = LogglyDevice({'ip': get_rand_private_ip()}) # de minimus Loggly device
         min_loggly_device2 = LogglyDevice({'ip': get_rand_private_ip()})
@@ -277,7 +356,7 @@ class TestLogglyLive(unittest.TestCase):
         We create an input and a device so we can test finding a specific device, then delete them.
         """
 
-        loggly_input = self.create_syslog_input()
+        loggly_input = self._create_syslog_input()
 
         min_loggly_device1 = LogglyDevice({'ip': get_rand_private_ip()}) # de minimus Loggly device
         min_loggly_device2 = LogglyDevice({'ip': get_rand_private_ip()})
@@ -300,7 +379,7 @@ class TestLogglyLive(unittest.TestCase):
         We create a device so we can test finding a specific device, then delete it.
         """
 
-        loggly_input = self.create_syslog_input()
+        loggly_input = self._create_syslog_input()
 
         min_loggly_device = LogglyDevice({'ip': get_rand_private_ip()}) # de minimus Loggly device
         loggly_device_to_find = self.conn.add_device_to_input(min_loggly_device, loggly_input) # create actual devices
@@ -311,223 +390,25 @@ class TestLogglyLive(unittest.TestCase):
         self.conn.delete_device(loggly_device_found)
         self.conn.delete_input(loggly_input)
 
-    # Next four tests have repetitive code. An opportunity for later cleanup.
-
     def testSubmitAndRetrieveTextEvents(self):
-        """ Submit some text data, and then find it.
+        """Test submitting and retrieving Text events."""
 
-        We create an HTTP text input, submit some unique data, and then find it.
-        """
-
-        # Create an input. Need an HTTP input.
-        loggly_input = self.create_http_text_input()
-
-        # Make a random string that we're certain won't be found.
-        string_event = rand_string(150)
-
-        # Test submitting a Text event.
-        submit_attempts = 10
-        submit_attempt_delay = 30
-        event_submitted = False
-        while not event_submitted and submit_attempts > 0:
-            try:
-                self.conn.submit_text_data(string_event, loggly_input.input_token)
-                print "Event submitted."
-                event_submitted = True
-            except Exception as e:
-                submit_attempts -= 1
-                print "Error submitting event: %s" % e.message
-                print "%s tries left. Will try again in %s seconds." % (submit_attempts, submit_attempt_delay)
-                time.sleep(submit_attempt_delay)
-
-        self.assertTrue(event_submitted, "Event not submitted.")
-
-        # Test retrieving a Text event.
-        search_attempts = 10
-        search_attempt_delay = 30
-        event_found = False
-        while not event_found and search_attempts > 0:
-            try:
-                events = self.conn.get_events_dict(string_event)
-                num_found = events['numFound']
-                if num_found > 0:
-                    print "Event found."
-                    event_found = True
-                else:
-                    search_attempts -= 1
-                    print "Event not found. %s tries left. Will try again in %s seconds."\
-                          % (search_attempts, search_attempt_delay)
-                    time.sleep(search_attempt_delay)
-            except Exception as e:
-                search_attempts -= 1
-                print "Error searching for event: %s" % e.message
-                print "%s tries left. Will try again in %s seconds." % (search_attempts, search_attempt_delay)
-
-        self.assertTrue(event_found, "Event not found.")
-
-        # Remove the input
-        self.conn.delete_input(loggly_input)
+        self._get_events(test_faceted=False, test_json=False)
 
     def testSubmitAndRetrieveJsonEvents(self):
+        """Test submitting and retrieving JSON events."""
 
-        # Create an input. Need an HTTP input.
-        loggly_input = self.create_http_json_input()
-
-        # Make a random string that we're certain won't be found.
-        event_string = rand_string(150)
-        event = {
-            'event_string': event_string
-        }
-        json_event = json.dumps(event)
-
-        # Test submitting a JSON event.
-        submit_attempts = 10
-        submit_attempt_delay = 30
-        event_submitted = False
-        while not event_submitted and submit_attempts > 0:
-            try:
-                self.conn.submit_text_data(json_event, loggly_input.input_token)
-                print "Event submitted."
-                event_submitted = True
-            except Exception as e:
-                submit_attempts -= 1
-                print "Error submitting event: %s" % e.message
-                print "%s tries left. Will try again in %s seconds." % (submit_attempts, submit_attempt_delay)
-                time.sleep(submit_attempt_delay)
-
-        self.assertTrue(event_submitted, "Event not submitted.")
-
-        # Test retrieving a JSON event.
-        search_attempts = 10
-        search_attempt_delay = 30
-        event_found = False
-        while not event_found and search_attempts > 0:
-            try:
-                events = self.conn.get_events_dict('json.event_string:"%s"' % event_string)
-                num_found = events['numFound']
-                if num_found > 0:
-                    print "Event found."
-                    event_found = True
-                else:
-                    search_attempts -= 1
-                    print "Event not found. %s tries left. Will try again in %s seconds." \
-                          % (search_attempts, search_attempt_delay)
-                    time.sleep(search_attempt_delay)
-            except Exception as e:
-                search_attempts -= 1
-                print "Error searching for event: %s" % e.message
-                print "%s tries left. Will try again in %s seconds." % (search_attempts, search_attempt_delay)
-
-        self.assertTrue(event_found, "Event not found.")
-
-        # Remove the input
-        self.conn.delete_input(loggly_input)
+        self._get_events(test_faceted=False, test_json=True)
 
     def testSubmitAndRetrieveTextEventsFaceted(self):
+        """Test submitting and retrieving faceted Text events."""
 
-        # Create an input. Need an HTTP input.
-        loggly_input = self.create_http_json_input()
-
-        # Make a random string that we're certain won't be found.
-        string_event = rand_string(150)
-
-        # Test submitting a Text event.
-        submit_attempts = 10
-        submit_attempt_delay = 30
-        event_submitted = False
-        while not event_submitted and submit_attempts > 0:
-            try:
-                self.conn.submit_text_data(string_event, loggly_input.input_token)
-                print "Event submitted."
-                event_submitted = True
-            except Exception as e:
-                submit_attempts -= 1
-                print "Error submitting event: %s" % e.message
-                print "%s tries left. Will try again in %s seconds." % (submit_attempts, submit_attempt_delay)
-                time.sleep(submit_attempt_delay)
-
-        self.assertTrue(event_submitted, "Event not submitted.")
-
-        # Test retrieving a Text event.
-        search_attempts = 10
-        search_attempt_delay = 30
-        event_found = False
-        while not event_found and search_attempts > 0:
-            try:
-                events = self.conn.get_events_faceted_dict("date", string_event)
-                num_found = events['numFound']
-                if num_found > 0:
-                    print "Event found."
-                    event_found = True
-                else:
-                    search_attempts -= 1
-                    print "Event not found. %s tries left. Will try again in %s seconds." \
-                          % (search_attempts, search_attempt_delay)
-                    time.sleep(search_attempt_delay)
-            except Exception as e:
-                search_attempts -= 1
-                print "Error searching for event: %s" % e.message
-                print "%s tries left. Will try again in %s seconds." % (search_attempts, search_attempt_delay)
-
-        self.assertTrue(event_found, "Event not found.")
-
-        # Remove the input
-        self.conn.delete_input(loggly_input)
+        self._get_events(test_faceted=True, test_json=False)
 
     def testSubmitAndRetrieveJsonEventsFaceted(self):
+        """Test submitting and retrieving faceted JSON events."""
 
-        # Create an input. Need an HTTP input.
-        loggly_input = self.create_http_json_input()
-
-        # Make a random string that we're certain won't be found.
-        event_string = rand_string(150)
-        event = {
-            'event_string': event_string
-        }
-        json_event = json.dumps(event)
-
-        # Test submitting a JSON event.
-        submit_attempts = 10
-        submit_attempt_delay = 30
-        event_submitted = False
-        while not event_submitted and submit_attempts > 0:
-            try:
-                self.conn.submit_text_data(json_event, loggly_input.input_token)
-                print "Event submitted."
-                event_submitted = True
-            except Exception as e:
-                submit_attempts -= 1
-                print "Error submitting event: %s" % e.message
-                print "%s tries left. Will try again in %s seconds." % (submit_attempts, submit_attempt_delay)
-                time.sleep(submit_attempt_delay)
-
-        self.assertTrue(event_submitted, "Event not submitted.")
-
-        # Test retrieving a JSON event.
-        search_attempts = 10
-        search_attempt_delay = 30
-        event_found = False
-        while not event_found and search_attempts > 0:
-            try:
-                events = self.conn.get_events_faceted_dict("date", 'json.event_string:"%s"' % event_string)
-                num_found = events['numFound']
-                if num_found > 0:
-                    print "Event found."
-                    event_found = True
-                else:
-                    search_attempts -= 1
-                    print "Event not found. %s tries left. Will try again in %s seconds." \
-                          % (search_attempts, search_attempt_delay)
-                    time.sleep(search_attempt_delay)
-            except Exception as e:
-                search_attempts -= 1
-                print "Error searching for event: %s" % e.message
-                print "%s tries left. Will try again in %s seconds." % (search_attempts, search_attempt_delay)
-
-        self.assertTrue(event_found, "Event not found.")
-
-        # Remove the input
-        self.conn.delete_input(loggly_input)
+        self._get_events(test_faceted=True, test_json=True)
 
     def testLogglyExceptions(self):
 
