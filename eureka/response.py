@@ -24,7 +24,7 @@ class LogglyResponse(object):
     """
 
     # Loggly-specific response codes to API-calls. See: http://loggly.com/support/advanced/api-manage-sources/
-    status_codes = {200: {'message': 'OK',
+    _status_codes = {200: {'message': 'OK',
                           'description': 'Indicates that the request was successful.'},
                     201: {'message': 'Created',
                           'description': 'The object was successfully created. This is for a POST call.'},
@@ -55,18 +55,18 @@ class LogglyResponse(object):
                                          'us with requests for events. Try again later.'}}
 
     # Codes considered exceptions/failures
-    exception_codes = (400, 401, 403, 404, 409, 410, 500, 501, 503)
+    _exception_codes = (400, 401, 403, 404, 409, 410, 500, 501, 503)
 
     def __init__(self, obj):
         self._wrapped_obj = obj
 
         # Add Loggly-specific information to response.
-        self.loggly_message = self.status_codes[self.status_code]['message']
-        self.loggly_description = self.status_codes[self.status_code]['description']
+        self.loggly_message = self._status_codes[self.status_code]['message']
+        self.loggly_description = self._status_codes[self.status_code]['description']
         self.loggly_info = "%s: %s - %s" % (self.status_code, self.loggly_message, self.loggly_description)
 
         # Handle responses considered to be errors.
-        if self.status_code in self.exception_codes:
+        if self.status_code in self._exception_codes:
             raise LogglyException(self.loggly_info)
 
     def __getattr__(self, attr):
