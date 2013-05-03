@@ -22,6 +22,7 @@ from device import LogglyDevice
 from input import LogglyInput
 from response import LogglyResponse
 import json
+from search import LogglySearch
 
 
 class LogglyConnection(object):
@@ -317,11 +318,11 @@ class LogglyConnection(object):
         return LogglyResponse(response)
 
     def get_events(self, query_string, **kwargs):
-        """Return events matching query_string."""
+        """Return events matching query_string as object data."""
 
-        response = self._search_events(query_string, **kwargs)
+        response = self._search_events(query_string, output_format="json", **kwargs)
 
-        return response.text
+        return LogglySearch(response, is_faceted=False)
 
     def get_events_json(self, query_string, **kwargs):
         """Return events matching query_string as (raw) JSON."""
@@ -382,11 +383,11 @@ class LogglyConnection(object):
         return LogglyResponse(response)
 
     def get_events_faceted(self, facetby, query_string, **kwargs):
-        """Return faceted events matching query_string."""
+        """Return faceted events matching query_string as object data."""
 
-        response = self._search_events_faceted(facetby, query_string, **kwargs)
+        response = self._search_events_faceted(facetby, query_string, output_format="json", **kwargs)
 
-        return response.text
+        return LogglySearch(response, is_faceted=True)
 
     def get_events_faceted_json(self, facetby, query_string, **kwargs):
         """Return faceted events matching query_string as JSON."""
