@@ -25,34 +25,34 @@ class LogglyResponse(object):
 
     # Loggly-specific response codes to API-calls. See: http://loggly.com/support/advanced/api-manage-sources/
     _status_codes = {200: {'message': 'OK',
-                          'description': 'Indicates that the request was successful.'},
-                    201: {'message': 'Created',
-                          'description': 'The object was successfully created. This is for a POST call.'},
-                    204: {'message': 'Deleted',
-                          'description': 'The object was deleted. This pertains to DELETE calls.'},
-                    400: {'message': 'Bad Request',
-                          'description': 'Check your request parameters. You might be using an unsupported '
-                                         'parameter or have a malformed something or another.'},
-                    401: {'message': 'Unauthorized',
-                          'description': 'Either your credentials specified were invalid.'},
-                    403: {'message': 'Forbidden',
-                          'description': 'User does not have privileges to execute the action.'},
-                    404: {'message': 'Not Found',
-                          'description': 'The resource you have referenced could not be found.'},
-                    409: {'message': 'Conflict/Duplicate',
-                          'description': 'There was some conflict. Most likely you are '
-                                         'trying to create a resource that already exists.'},
-                    410: {'message': 'Gone',
-                          'description': 'You have referenced an object that does not exist.'},
-                    500: {'message': 'Internal Server Error',
-                          'description': 'There has been an error from which Loggly could not '
-                                         'recover. We are likely notified when this happens.'},
-                    501: {'message': 'Not Implemented',
-                          'description': 'You are trying to access functionality that '
-                                         'is not implemented. Yet.'},
-                    503: {'message': 'Throttled',
-                          'description': 'Like a needy child, you are overloading '
-                                         'us with requests for events. Try again later.'}}
+                           'description': 'Indicates that the request was successful.'},
+                     201: {'message': 'Created',
+                           'description': 'The object was successfully created. This is for a POST call.'},
+                     204: {'message': 'Deleted',
+                           'description': 'The object was deleted. This pertains to DELETE calls.'},
+                     400: {'message': 'Bad Request',
+                           'description': 'Check your request parameters. You might be using an unsupported '
+                                          'parameter or have a malformed something or another.'},
+                     401: {'message': 'Unauthorized',
+                           'description': 'Either your credentials specified were invalid.'},
+                     403: {'message': 'Forbidden',
+                           'description': 'User does not have privileges to execute the action.'},
+                     404: {'message': 'Not Found',
+                           'description': 'The resource you have referenced could not be found.'},
+                     409: {'message': 'Conflict/Duplicate',
+                           'description': 'There was some conflict. Most likely you are '
+                                          'trying to create a resource that already exists.'},
+                     410: {'message': 'Gone',
+                           'description': 'You have referenced an object that does not exist.'},
+                     500: {'message': 'Internal Server Error',
+                           'description': 'There has been an error from which Loggly could not '
+                                          'recover. We are likely notified when this happens.'},
+                     501: {'message': 'Not Implemented',
+                           'description': 'You are trying to access functionality that '
+                                          'is not implemented. Yet.'},
+                     503: {'message': 'Throttled',
+                           'description': 'Like a needy child, you are overloading '
+                                          'us with requests for events. Try again later.'}}
 
     # Codes considered exceptions/failures
     _exception_codes = (400, 401, 403, 404, 409, 410, 500, 501, 503)
