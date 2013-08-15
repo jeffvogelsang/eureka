@@ -123,23 +123,29 @@ class LogglyConnection(object):
 
         return loggly_input
 
-    def get_input_id_by_name(self, input_name):
-        """Get a specific input id given and input name.
+    def get_input_by_name(self, input_name):
+        """Get a specific input given an input name.
 
-        NOTE: Assumes that inputs are uniquely named. Testing indicates this to be true.
         """
 
-        input_id = None
+        input_found = None
 
         inputs = self.get_all_inputs()
         for input in inputs:
             if getattr(input, 'name', None) == input_name:
-                input_id = input.id
+                input_found = input
 
-        if input_id is None:
+        if input_found is None:
             raise LogglyException("No input found with name: %s" % input_name)
 
-        return input_id
+        return input_found
+
+    def get_input_id_by_name(self, input_name):
+        """Get a specific input id given and input name.
+
+        """
+
+        return self.get_input_by_name(input_name).id
 
     def list_inputs(self):
         """List all inputs."""
@@ -205,23 +211,52 @@ class LogglyConnection(object):
 
         return loggly_device
 
-    def get_device_id_by_name(self, device_name):
-        """Get a specific input id given and input name.
+    def get_device_by_name(self, device_name):
+        """Get a specific device given an input name.
 
-        NOTE: Assumes that inputs are uniquely named. Testing indicates this to be true.
         """
 
-        device_id = None
-
+        found_device = None
         devices = self.get_all_devices()
         for device in devices:
             if getattr(device, 'name', None) == device_name:
-                device_id = device.id
+                found_device = device
 
-        if device_id is None:
+        if found_device is None:
             raise LogglyException("No device found with name: %s" % device_name)
 
-        return device_id
+        return found_device
+
+    def get_device_id_by_name(self, device_name):
+        """Get a specific device id given an input name.
+
+        """
+
+        return self.get_device_by_name(device_name).id
+
+    def get_device_by_ip(self, device_ip):
+        """Get a specific device given an IP.
+
+        """
+
+        found_device = None
+
+        devices = self.get_all_devices()
+        for device in devices:
+            if getattr(device, 'ip', None) == device_ip:
+                found_device = device
+
+        if found_device is None:
+            raise LogglyException("No device found with ip: %s" % device_ip)
+
+        return device
+
+    def get_device_id_by_ip(self, device_ip):
+        """Get a specific device id given an IP.
+
+        """
+
+        return self.get_device_by_ip(device_ip).id
 
     def list_devices(self):
         """List all devices."""
@@ -233,7 +268,7 @@ class LogglyConnection(object):
         return device_list
 
     def add_device_to_input(self, loggly_device, loggly_input, device_name=None):
-        """Add an arbitrary device (specified IP address) to the given input."""
+        """Add an arbitrary device to the given input."""
 
         path = 'devices/'
 
@@ -249,10 +284,20 @@ class LogglyConnection(object):
 
         return loggly_device
 
+    def add_ip_to_input(self, ip, loggly_input, device_name=None):
+        """Add an arbitrary device based on supplied IP address string."""
+
+        return self.add_device_to_input(LogglyDevice({'ip': ip}), loggly_input, device_name)
+
+    def add_ip_to_input_by_name(self, ip, input_name, device_name=None):
+        """Add an arbitrary device based on supplied IP address string."""
+
+        return self.add_device_to_input(LogglyDevice({'ip': ip}), self.get_input_by_name(input_name), device_name)
+
     def add_this_device_to_input(self, loggly_input):
         """Add a device matching the IP of the HTTP client calling the API from the given input.
 
-           NOTE: add_device_to_input() allows for naming the device; this method does not.
+           NOTE: add_device_to_input(), and add_ip_to_input allow for naming the device; this method does not.
         """
 
         path = 'inputs/%s/adddevice/' % loggly_input.id

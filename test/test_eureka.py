@@ -284,6 +284,38 @@ class TestLogglyLive(unittest.TestCase):
         self.conn.delete_device(loggly_device)
         self.conn.delete_input(loggly_input)
 
+    def testCreateDeleteDeviceWithIP(self):
+        """Create a device using an IP and Name, then delete it.
+
+        This requires adding the device to an input, so we create and delete one of these as well.
+        """
+
+        loggly_input = self._create_syslog_input()
+
+        device_ip = get_rand_private_ip()
+        device_name = "test-name-%s" % rand_string()
+
+        loggly_device = self.conn.add_ip_to_input(device_ip, loggly_input, device_name)  # create actual device
+
+        self.conn.delete_device(loggly_device)
+        self.conn.delete_input(loggly_input)
+
+    def testCreateDeleteDeviceWithIPAndNamedInput(self):
+        """Create a device using an IP and Name, then delete it.
+
+        This requires adding the device to an input, so we create and delete one of these as well.
+        """
+
+        loggly_input = self._create_syslog_input()
+
+        device_ip = get_rand_private_ip()
+        device_name = "test-name-%s" % rand_string()
+
+        loggly_device = self.conn.add_ip_to_input_by_name(device_ip, loggly_input.name, device_name)
+
+        self.conn.delete_device(loggly_device)
+        self.conn.delete_input(loggly_input)
+
     def testCreateDeleteThisDevice(self):
         """Create a device based on the current IP that Loggly sees, then delete it.
 
@@ -327,6 +359,26 @@ class TestLogglyLive(unittest.TestCase):
 
         self.conn.delete_input(loggly_input1)
         self.conn.delete_input(loggly_input2)
+
+    def testGetInputByName(self):
+        """Create an input, and then find its ID using the input's name.
+
+        We create a input so we can test finding a specific input, then delete it.
+        """
+
+        loggly_input_to_find = self._create_syslog_input()
+        loggly_input_found = self.conn.get_input_by_name(loggly_input_to_find.name)
+
+        self.assertEqual(loggly_input_found.id, loggly_input_to_find.id)
+
+        self.conn.delete_input(loggly_input_to_find)
+
+    def testGetInputByNameNotFoundErrors(self):
+        """Ensure we get an exception if we search for an input that doesn't exist.
+
+        """
+
+        self.assertRaises(Exception, self.conn.get_input_by_name, rand_string(32))
 
     def testGetInputIdByName(self):
         """Create an input, and then find its ID using the input's name.
@@ -424,6 +476,33 @@ class TestLogglyLive(unittest.TestCase):
         self.conn.delete_device(loggly_device_found)
         self.conn.delete_input(loggly_input)
 
+    def testGetDeviceByName(self):
+        """Create an device, and then find it using the device's name.
+
+        We create a device so we can test finding a specific device, then delete it.
+        """
+
+        loggly_input = self._create_syslog_input()
+
+        device_name = "test-name-%s" % rand_string()
+
+        min_loggly_device = LogglyDevice({'ip': get_rand_private_ip()}) # de minimus Loggly device
+        loggly_device_to_find = self.conn.add_device_to_input(min_loggly_device, loggly_input, device_name)
+
+        loggly_device_found = self.conn.get_device_by_name(device_name)
+
+        self.assertEqual(loggly_device_to_find.id, loggly_device_found.id)
+
+        self.conn.delete_device(loggly_device_to_find)
+        self.conn.delete_input(loggly_input)
+
+    def testGetDeviceByNameNotFound(self):
+        """Ensure we get an exception if we search for a device that doesn't exist.
+
+        """
+
+        self.assertRaises(Exception, self.conn.get_device_by_name, rand_string(32))
+
     def testGetDeviceIdByName(self):
         """Create an device, and then find its ID using the device's name.
 
@@ -445,11 +524,65 @@ class TestLogglyLive(unittest.TestCase):
         self.conn.delete_input(loggly_input)
 
     def testGetDeviceIdByNameNotFound(self):
-        """Ensure we get an exception if we search for an input that doesn't exist.
+        """Ensure we get an exception if we search for a device that doesn't exist.
 
         """
 
         self.assertRaises(Exception, self.conn.get_device_id_by_name, rand_string(32))
+
+    def testGetDeviceByIp(self):
+        """Create an device, and then find it using the device's name.
+
+        We create a device so we can test finding a specific device, then delete it.
+        """
+
+        loggly_input = self._create_syslog_input()
+
+        device_ip = get_rand_private_ip()
+
+        min_loggly_device = LogglyDevice({'ip': device_ip})  # de minimus Loggly device
+        loggly_device_to_find = self.conn.add_device_to_input(min_loggly_device, loggly_input)
+
+        loggly_device_found = self.conn.get_device_by_ip(device_ip)
+
+        self.assertEqual(loggly_device_to_find.id, loggly_device_found.id)
+
+        self.conn.delete_device(loggly_device_to_find)
+        self.conn.delete_input(loggly_input)
+
+    def testGetDeviceByIpNotFound(self):
+        """Ensure we get an exception if we search for a device that doesn't exist.
+
+        """
+
+        self.assertRaises(Exception, self.conn.get_device_by_ip, get_rand_private_ip())
+
+    def testGetDeviceIdByIp(self):
+        """Create an device, and then find its ID using the device's name.
+
+        We create a device so we can test finding a specific device, then delete it.
+        """
+
+        loggly_input = self._create_syslog_input()
+
+        device_ip = get_rand_private_ip()
+
+        min_loggly_device = LogglyDevice({'ip': device_ip})  # de minimus Loggly device
+        loggly_device_to_find = self.conn.add_device_to_input(min_loggly_device, loggly_input)
+
+        loggly_device_found_id = self.conn.get_device_id_by_ip(device_ip)
+
+        self.assertEqual(loggly_device_to_find.id, loggly_device_found_id)
+
+        self.conn.delete_device(loggly_device_to_find)
+        self.conn.delete_input(loggly_input)
+
+    def testGetDeviceIdByIpNotFound(self):
+        """Ensure we get an exception if we search for a device that doesn't exist.
+
+        """
+
+        self.assertRaises(Exception, self.conn.get_device_id_by_ip, get_rand_private_ip())
 
     def testSubmitAndRetrieveTextEvents(self):
         """Test submitting and retrieving Text events."""
