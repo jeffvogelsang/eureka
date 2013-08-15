@@ -19,6 +19,7 @@
 import os
 import requests
 from device import LogglyDevice
+from error import LogglyException
 from input import LogglyInput
 from response import LogglyResponse
 import json
@@ -122,6 +123,24 @@ class LogglyConnection(object):
 
         return loggly_input
 
+    def get_input_id_by_name(self, input_name):
+        """Get a specific input id given and input name.
+
+        NOTE: Assumes that inputs are uniquely named. Testing indicates this to be true.
+        """
+
+        input_id = None
+
+        inputs = self.get_all_inputs()
+        for input in inputs:
+            if getattr(input, 'name', None) == input_name:
+                input_id = input.id
+
+        if input_id is None:
+            raise LogglyException("No input found with name: %s" % input_name)
+
+        return input_id
+
     def list_inputs(self):
         """List all inputs."""
 
@@ -185,6 +204,24 @@ class LogglyConnection(object):
         loggly_device = LogglyDevice(json)
 
         return loggly_device
+
+    def get_device_id_by_name(self, device_name):
+        """Get a specific input id given and input name.
+
+        NOTE: Assumes that inputs are uniquely named. Testing indicates this to be true.
+        """
+
+        device_id = None
+
+        devices = self.get_all_devices()
+        for device in devices:
+            if getattr(device, 'name', None) == device_name:
+                device_id = device.id
+
+        if device_id is None:
+            raise LogglyException("No device found with name: %s" % device_name)
+
+        return device_id
 
     def list_devices(self):
         """List all devices."""

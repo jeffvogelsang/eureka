@@ -31,6 +31,10 @@ Or install from PyPI:
 
     sudo easy_install eureka
 
+    or
+
+    sudo pip install eureka
+
 
 Library Usage
 --------------------

@@ -18,7 +18,7 @@
 from distutils.core import setup
 
 setup(name='eureka',
-      version='0.11',
+      version='0.12',
       description='A Python Loggly Library',
       long_description='Provides a Python interface to the Loggly API.',
       author='Jeff Vogelsang',

@@ -328,6 +328,26 @@ class TestLogglyLive(unittest.TestCase):
         self.conn.delete_input(loggly_input1)
         self.conn.delete_input(loggly_input2)
 
+    def testGetInputIdByName(self):
+        """Create an input, and then find its ID using the input's name.
+
+        We create a input so we can test finding a specific input, then delete it.
+        """
+
+        loggly_input_to_find = self._create_syslog_input()
+        loggly_input_found_id = self.conn.get_input_id_by_name(loggly_input_to_find.name)
+
+        self.assertEqual(loggly_input_found_id, loggly_input_to_find.id)
+
+        self.conn.delete_input(loggly_input_to_find)
+
+    def testGetInputIdByNameNotFoundErrors(self):
+        """Ensure we get an exception if we search for an input that doesn't exist.
+
+        """
+
+        self.assertRaises(Exception, self.conn.get_input_id_by_name, rand_string(32))
+
     def testGetInput(self):
         """Get a single input by id.
 
@@ -403,6 +423,33 @@ class TestLogglyLive(unittest.TestCase):
 
         self.conn.delete_device(loggly_device_found)
         self.conn.delete_input(loggly_input)
+
+    def testGetDeviceIdByName(self):
+        """Create an device, and then find its ID using the device's name.
+
+        We create a device so we can test finding a specific device, then delete it.
+        """
+
+        loggly_input = self._create_syslog_input()
+
+        device_name = "test-name-%s" % rand_string()
+
+        min_loggly_device = LogglyDevice({'ip': get_rand_private_ip()}) # de minimus Loggly device
+        loggly_device_to_find = self.conn.add_device_to_input(min_loggly_device, loggly_input, device_name)
+
+        loggly_device_found_id = self.conn.get_device_id_by_name(device_name)
+
+        self.assertEqual(loggly_device_to_find.id, loggly_device_found_id)
+
+        self.conn.delete_device(loggly_device_to_find)
+        self.conn.delete_input(loggly_input)
+
+    def testGetDeviceIdByNameNotFound(self):
+        """Ensure we get an exception if we search for an input that doesn't exist.
+
+        """
+
+        self.assertRaises(Exception, self.conn.get_device_id_by_name, rand_string(32))
 
     def testSubmitAndRetrieveTextEvents(self):
         """Test submitting and retrieving Text events."""
