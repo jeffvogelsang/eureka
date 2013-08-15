@@ -195,12 +195,15 @@ class LogglyConnection(object):
 
         return device_list
 
-    def add_device_to_input(self, loggly_device, loggly_input):
+    def add_device_to_input(self, loggly_device, loggly_input, device_name=None):
         """Add an arbitrary device (specified IP address) to the given input."""
 
         path = 'devices/'
 
         data = {'input_id': loggly_input.id, 'ip': loggly_device.ip}
+
+        if device_name is not None:
+            data['name'] = device_name
 
         response = self._loggly_post(path, data)
 
@@ -210,7 +213,10 @@ class LogglyConnection(object):
         return loggly_device
 
     def add_this_device_to_input(self, loggly_input):
-        """Add a device matching the IP of the HTTP client calling the API from the given input."""
+        """Add a device matching the IP of the HTTP client calling the API from the given input.
+
+           NOTE: add_device_to_input() allows for naming the device; this method does not.
+        """
 
         path = 'inputs/%s/adddevice/' % loggly_input.id
 

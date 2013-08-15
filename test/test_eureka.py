@@ -270,6 +270,20 @@ class TestLogglyLive(unittest.TestCase):
         self.conn.delete_device(loggly_device)
         self.conn.delete_input(loggly_input)
 
+    def testCreateDeleteDeviceWithName(self):
+        """Create a device then delete it.
+
+        This requires adding the device to an input, so we create and delete one of these as well.
+        """
+
+        loggly_input = self._create_syslog_input()
+
+        min_loggly_device = LogglyDevice({'ip': get_rand_private_ip()})
+        loggly_device = self.conn.add_device_to_input(min_loggly_device, loggly_input, "test-name-%s" % rand_string())
+
+        self.conn.delete_device(loggly_device)
+        self.conn.delete_input(loggly_input)
+
     def testCreateDeleteThisDevice(self):
         """Create a device based on the current IP that Loggly sees, then delete it.
 
