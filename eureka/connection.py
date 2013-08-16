@@ -330,6 +330,14 @@ class LogglyConnection(object):
 
         return "%s:%s" % (response.status_code, response.text)
 
+    def delete_device_by_ip(self, ip):
+        """Remove the device specified by the given ip.
+
+        Note: This removes a device from all inputs. Compare with remove_this_device_from_input.
+        """
+
+        self.delete_device(self.get_device_by_ip(ip))
+
     #### SUBMISSION API ####
 
     def _submit_data(self, input_key, data, data_type="text"):
