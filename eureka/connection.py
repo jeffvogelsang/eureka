@@ -249,7 +249,7 @@ class LogglyConnection(object):
         if found_device is None:
             raise LogglyException("No device found with ip: %s" % device_ip)
 
-        return device
+        return found_device
 
     def get_device_id_by_ip(self, device_ip):
         """Get a specific device id given an IP.
