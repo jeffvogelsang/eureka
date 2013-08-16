@@ -18,7 +18,7 @@
 
 from connection import LogglyConnection
 
-__version__ = '0.13'
+__version__ = '0.14'
 
 __author__ = 'Jeff Vogelsang <jeffvogelsang@gmail.com>'
 __copyright__ = "Jeff Vogelsang"
